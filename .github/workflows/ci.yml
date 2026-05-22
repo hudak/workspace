@@ -56,8 +56,3 @@ jobs:
           cache-from: type=gha,scope=${{ github.ref }}
           cache-to: type=gha,mode=max,scope=${{ github.ref }}
 
-      - name: Export digest
-        id: digest
-        if: github.event_name != 'pull_request'
-        run: |
-          echo "digest=${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
