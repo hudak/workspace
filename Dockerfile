@@ -35,7 +35,6 @@ RUN groupadd -g 999 docker && \
 
 USER developer
 WORKDIR /home/developer
-RUN mkdir -p .ssh && chmod 700 .ssh
 
 EXPOSE 22
 
