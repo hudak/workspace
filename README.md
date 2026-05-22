@@ -9,13 +9,16 @@ A Debian-based development environment container with SSH access, Zsh shell, and
 - Docker CLI (connects to host Docker via socket mount)
 - Non-root `developer` user with sudo access
 - GitHub Actions CI for building and pushing to GHCR
+- Configurable via environment variables
 
 ## Quick Start
 
-### Build and run with docker-compose
+### Run with docker-compose
+
+Set your image and pull:
 
 ```bash
-docker compose up -d --build
+SSH_PUBLIC_KEY="$(cat ~/.ssh/id_ed25519.pub)" docker compose up -d
 ```
 
 ### SSH into the container
@@ -24,55 +27,37 @@ docker compose up -d --build
 ssh -p 2222 developer@localhost
 ```
 
-## SSH Authentication
+## Configuration
 
-### Option 1: Build-time key injection
+Override defaults by creating a `.env` file or exporting environment variables before running `docker compose`:
 
-```bash
-docker build --build-arg SSH_PUBLIC_KEY="$(cat ~/.ssh/id_ed25519.pub)" -t dev-env .
-```
+| Variable | Default | Description |
+| --- | --- | --- |
+| `CONTAINER_NAME` | `dev-env` | Container name |
+| `IMAGE_NAME` | `ghcr.io/OWNER/REPO:stable` | Image to pull |
+| `SSH_PORT` | `2222` | Host port for SSH |
+| `TIMEZONE` | `UTC` | Container timezone |
+| `SSH_PUBLIC_KEY` | *(empty)* | SSH public key for authentication |
 
-### Option 2: Runtime mount
+Example `.env`:
 
-Copy your public key into an `authorized_keys` file and mount it:
-
-```bash
-mkdir -p ~/.ssh-dev
-cp ~/.ssh/id_ed25519.pub ~/.ssh-dev/authorized_keys
-```
-
-Then add to `docker-compose.yml`:
-
-```yaml
-volumes:
-  - ~/.ssh-dev/authorized_keys:/home/developer/.ssh/authorized_keys:ro
-```
-
-### Option 3: Manual copy (after container is running)
-
-```bash
-docker compose exec dev mkdir -p /home/developer/.ssh
-cat ~/.ssh/id_ed25519.pub | docker compose exec -T tee /home/developer/.ssh/authorized_keys
-docker compose exec dev chmod 600 /home/developer/.ssh/authorized_keys
-docker compose exec dev chown developer:developer /home/developer/.ssh/authorized_keys
+```env
+CONTAINER_NAME=my-dev
+IMAGE_NAME=ghcr.io/myorg/my-dev:stable
+SSH_PORT=2200
+TIMEZONE=America/New_York
+SSH_PUBLIC_KEY=ssh-ed25519 AAAA... your@email.com
 ```
 
 ## Without docker-compose
-
-### Build
-
-```bash
-docker build --build-arg SSH_PUBLIC_KEY="$(cat ~/.ssh/id_ed25519.pub)" -t dev-env .
-```
-
-### Run
 
 ```bash
 docker run -d \
   --name dev-env \
   -p 2222:22 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  dev-env
+  -e SSH_PUBLIC_KEY="$(cat ~/.ssh/id_ed25519.pub)" \
+  ghcr.io/OWNER/REPO:stable
 ```
 
 ## GitHub Actions
@@ -81,7 +66,7 @@ The workflow at `.github/workflows/ci.yml` builds and pushes the image to GHCR o
 
 The image will be available at:
 ```
-ghcr.io/<owner>/<repo>:latest
+ghcr.io/<owner>/<repo>:stable
 ghcr.io/<owner>/<repo>:sha-<commit-sha>
 ```
 
