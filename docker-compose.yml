@@ -1,0 +1,17 @@
+services:
+  developer-workspace:
+    image: ${IMAGE_NAME:-ghcr.io/hudak/workspace:stable}
+    container_name: ${CONTAINER_NAME:-workspace}
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "${SSH_PORT:-2222}:22"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dev-home:/home/developer
+    environment:
+      - TZ=${TIMEZONE:-UTC}
+      - SSH_PUBLIC_KEY=${SSH_PUBLIC_KEY:-}
+
+volumes:
+  dev-home:
